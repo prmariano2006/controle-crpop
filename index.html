@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Efetivo e Viaturas por Município</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .search-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background: #2a5298;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .filter-btn:hover {
+            background: #1e3c72;
+            transform: translateY(-2px);
+        }
+        
+        .filter-btn.active {
+            background: #28a745;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-left: 5px solid #2a5298;
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2a5298;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .data-grid {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-x: auto;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .data-table th {
+            background: #2a5298;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 3px solid #1e3c72;
+        }
+        
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .data-table tr.highlight {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+        }
+        
+        .efetivo-cell {
+            font-weight: bold;
+            color: #2a5298;
+        }
+        
+        .viaturas-cell {
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .ratio-cell {
+            font-style: italic;
+            color: #666;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            .search-section {
+                flex-direction: column;
+            }
+            
+            .filter-buttons {
+                justify-content: center;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .stat-number {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚔 Dashboard Operacional</h1>
+            <p>Controle de Efetivo e Viaturas por Município</p>
+        </div>
+        
+        <div class="controls">
+            <div class="search-section">
+                <input type="text" class="search-input" id="searchInput" placeholder="Buscar município...">
+                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+                <button class="filter-btn" onclick="document.getElementById('fileInput').click()">
+                    📂 Carregar Planilha
+                </button>
+            </div>
+            
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterData('all')">Todos</button>
+                <button class="filter-btn" onclick="filterData('with-efetivo')">Com Efetivo</button>
+                <button class="filter-btn" onclick="filterData('with-viaturas')">Com Viaturas</button>
+                <button class="filter-btn" onclick="filterData('sem-cobertura')">Sem Cobertura</button>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalMunicipios">49</div>
+                <div class="stat-label">Municípios</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalEfetivo">208</div>
+                <div class="stat-label">Efetivo Total</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalViaturas">61</div>
+                <div class="stat-label">Viaturas Total</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="coberturaPercentual">73%</div>
+                <div class="stat-label">Cobertura</div>
+            </div>
+        </div>
+        
+        <div class="data-grid">
+            <h3>Distribuição por Município</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Município</th>
+                        <th>Efetivo (24h)</th>
+                        <th>Viaturas (24h)</th>
+                        <th>Razão E/V</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Dados iniciais baseados na sua informação
+        const dadosOriginais = [
+            { municipio: "ÁGUA SANTA", efetivo: 0, viaturas: 0 },
+            { municipio: "ALTO ALEGRE", efetivo: 2, viaturas: 1 },
+            { municipio: "ANTA GORDA", efetivo: 2, viaturas: 1 },
+            { municipio: "ARVOREZINHA", efetivo: 6, viaturas: 3 },
+            { municipio: "CAMARGO", efetivo: 0, viaturas: 0 },
+            { municipio: "CARAZINHO", efetivo: 21, viaturas: 4 },
+            { municipio: "CASCA", efetivo: 2, viaturas: 1 },
+            { municipio: "CHAPADA", efetivo: 5, viaturas: 0 },
+            { municipio: "CHARRUA", efetivo: 0, viaturas: 0 },
+            { municipio: "COLORADO", efetivo: 2, viaturas: 1 },
+            { municipio: "CONSTANTINA", efetivo: 4, viaturas: 1 },
+            { municipio: "COXILHA", efetivo: 2, viaturas: 1 },
+            { municipio: "DAVID CANABARRO", efetivo: 3, viaturas: 1 },
+            { municipio: "DOIS LAJEADOS", efetivo: 0, viaturas: 0 },
+            { municipio: "ENGENHO VELHO", efetivo: 0, viaturas: 0 },
+            { municipio: "ESPUMOSO", efetivo: 0, viaturas: 0 },
+            { municipio: "FONTOURA XAVIER", efetivo: 1, viaturas: 0 },
+            { municipio: "GENTIL", efetivo: 2, viaturas: 1 },
+            { municipio: "GUAPORÉ", efetivo: 7, viaturas: 1 },
+            { municipio: "IBIRAPUITÃ", efetivo: 2, viaturas: 1 },
+            { municipio: "ILÓPOLIS", efetivo: 0, viaturas: 0 },
+            { municipio: "ITAPUCA", efetivo: 2, viaturas: 1 },
+            { municipio: "LAGOA DOS TRÊS CANTOS", efetivo: 0, viaturas: 0 },
+            { municipio: "LIBERATO SALZANO", efetivo: 3, viaturas: 1 },
+            { municipio: "MARAU", efetivo: 0, viaturas: 0 },
+            { municipio: "MATO CASTELHANO", efetivo: 3, viaturas: 1 },
+            { municipio: "MONTAURI", efetivo: 2, viaturas: 1 },
+            { municipio: "MORMAÇO", efetivo: 2, viaturas: 1 },
+            { municipio: "MULITERNO", efetivo: 3, viaturas: 0 },
+            { municipio: "NÃO-ME-TOQUE", efetivo: 0, viaturas: 0 },
+            { municipio: "NICOLAU VERGUEIRO", efetivo: 2, viaturas: 1 },
+            { municipio: "NOVA ALVORADA", efetivo: 2, viaturas: 1 },
+            { municipio: "NOVO XINGU", efetivo: 0, viaturas: 0 },
+            { municipio: "PASSO FUNDO", efetivo: 73, viaturas: 19 },
+            { municipio: "PONTÃO", efetivo: 2, viaturas: 1 },
+            { municipio: "PUTINGA", efetivo: 2, viaturas: 1 },
+            { municipio: "RONDA ALTA", efetivo: 3, viaturas: 1 },
+            { municipio: "RONDINHA", efetivo: 2, viaturas: 1 },
+            { municipio: "SANTO ANTÔNIO DO PALMA", efetivo: 3, viaturas: 1 },
+            { municipio: "SÃO DOMINGOS DO SUL", efetivo: 0, viaturas: 0 },
+            { municipio: "SÃO JOSÉ DO HERVAL", efetivo: 3, viaturas: 2 },
+            { municipio: "SÃO VALENTIM DO SUL", efetivo: 0, viaturas: 0 },
+            { municipio: "SARANDI", efetivo: 9, viaturas: 3 },
+            { municipio: "SERAFINA CORRÊA", efetivo: 6, viaturas: 1 },
+            { municipio: "SERTÃO", efetivo: 4, viaturas: 1 },
+            { municipio: "SOLEDADE", efetivo: 9, viaturas: 1 },
+            { municipio: "TAPEJARA", efetivo: 5, viaturas: 2 },
+            { municipio: "TAPERA", efetivo: 0, viaturas: 0 },
+            { municipio: "TIO HUGO", efetivo: 0, viaturas: 0 },
+            { municipio: "TRÊS PALMEIRAS", efetivo: 2, viaturas: 1 },
+            { municipio: "VANINI", efetivo: 3, viaturas: 1 },
+            { municipio: "VICTOR GRAEFF", efetivo: 0, viaturas: 0 },
+            { municipio: "VILA LÂNGARO", efetivo: 0, viaturas: 0 },
+            { municipio: "VILA MARIA", efetivo: 2, viaturas: 1 }
+        ];
+
+        let dadosAtuais = [...dadosOriginais];
+        let filtroAtual = 'all';
+
+        function calcularEstatisticas() {
+            const totalMunicipios = dadosAtuais.length;
+            const totalEfetivo = dadosAtuais.reduce((sum, item) => sum + item.efetivo, 0);
+            const totalViaturas = dadosAtuais.reduce((sum, item) => sum + item.viaturas, 0);
+            const municipiosComCobertura = dadosAtuais.filter(item => item.efetivo > 0 || item.viaturas > 0).length;
+            const coberturaPercentual = Math.round((municipiosComCobertura / totalMunicipios) * 100);
+
+            document.getElementById('totalMunicipios').textContent = totalMunicipios;
+            document.getElementById('totalEfetivo').textContent = totalEfetivo;
+            document.getElementById('totalViaturas').textContent = totalViaturas;
+            document.getElementById('coberturaPercentual').textContent = coberturaPercentual + '%';
+        }
+
+        function getStatus(efetivo, viaturas) {
+            if (efetivo === 0 && viaturas === 0) return "Sem Cobertura";
+            if (efetivo > 0 && viaturas > 0) return "Cobertura Completa";
+            if (efetivo > 0) return "Apenas Efetivo";
+            if (viaturas > 0) return "Apenas Viaturas";
+            return "N/A";
+        }
+
+        function getRazao(efetivo, viaturas) {
+            if (viaturas === 0) return efetivo > 0 ? "∞" : "0";
+            return (efetivo / viaturas).toFixed(1);
+        }
+
+        function renderizarTabela(dados) {
+            const tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = '';
+
+            if (dados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">Nenhum município encontrado</td></tr>';
+                return;
+            }
+
+            dados.forEach(item => {
+                const row = document.createElement('tr');
+                const status = getStatus(item.efetivo, item.viaturas);
+                
+                if (status === "Cobertura Completa") {
+                    row.classList.add('highlight');
+                }
+
+                row.innerHTML = `
+                    <td><strong>${item.municipio}</strong></td>
+                    <td class="efetivo-cell">${item.efetivo}</td>
+                    <td class="viaturas-cell">${item.viaturas}</td>
+                    <td class="ratio-cell">${getRazao(item.efetivo, item.viaturas)}</td>
+                    <td>${status}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function filterData(tipo) {
+            // Atualizar botões
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            filtroAtual = tipo;
+            aplicarFiltros();
+        }
+
+        function aplicarFiltros() {
+            let dadosFiltrados = [...dadosOriginais];
+
+            // Aplicar filtro de busca
+            const termoBusca = document.getElementById('searchInput').value.toLowerCase();
+            if (termoBusca) {
+                dadosFiltrados = dadosFiltrados.filter(item => 
+                    item.municipio.toLowerCase().includes(termoBusca)
+                );
+            }
+
+            // Aplicar filtro por tipo
+            switch (filtroAtual) {
+                case 'with-efetivo':
+                    dadosFiltrados = dadosFiltrados.filter(item => item.efetivo > 0);
+                    break;
+                case 'with-viaturas':
+                    dadosFiltrados = dadosFiltrados.filter(item => item.viaturas > 0);
+                    break;
+                case 'sem-cobertura':
+                    dadosFiltrados = dadosFiltrados.filter(item => item.efetivo === 0 && item.viaturas === 0);
+                    break;
+            }
+
+            dadosAtuais = dadosFiltrados;
+            renderizarTabela(dadosAtuais);
+            calcularEstatisticas();
+        }
+
+        // Configurar busca
+        document.getElementById('searchInput').addEventListener('input', aplicarFiltros);
+
+        // Configurar upload de arquivo
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Aqui você pode processar o arquivo Excel
+                    alert('Funcionalidade de importação será implementada. Por enquanto, os dados estão sendo carregados manualmente.');
+                };
+                reader.readAsBinaryString(file);
+            }
+        });
+
+        // Inicializar
+        renderizarTabela(dadosAtuais);
+        calcularEstatisticas();
+    </script>
+</body>
+</html>
