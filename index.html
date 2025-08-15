@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Efetivo e Viaturas por Município</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Dashboard CRPOP - Efetivo e Viaturas</title>
     <style>
         * {
             margin: 0;
@@ -58,10 +59,11 @@
             gap: 15px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            align-items: stretch;
         }
         
         .search-input {
-            flex: 1;
+            flex: 2;
             min-width: 250px;
             padding: 12px 15px;
             border: 2px solid #ddd;
@@ -75,10 +77,62 @@
             border-color: #2a5298;
         }
         
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .file-label {
+            padding: 12px 25px;
+            background: #28a745;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: block;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .file-label:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        
+        .clear-btn {
+            padding: 12px 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            white-space: nowrap;
+            min-width: 140px;
+        }
+        
+        .clear-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+        
         .filter-buttons {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            margin-top: 15px;
+            justify-content: flex-start;
         }
         
         .filter-btn {
@@ -117,6 +171,14 @@
             border-left: 5px solid #2a5298;
         }
         
+        .stat-card.rpmon {
+            border-left-color: #28a745;
+        }
+        
+        .stat-card.bpm {
+            border-left-color: #dc3545;
+        }
+        
         .stat-number {
             font-size: 2.5em;
             font-weight: bold;
@@ -150,6 +212,8 @@
             text-align: left;
             font-weight: bold;
             border-bottom: 3px solid #1e3c72;
+            position: sticky;
+            top: 0;
         }
         
         .data-table td {
@@ -181,6 +245,22 @@
             color: #666;
         }
         
+        .regiao-tag {
+            padding: 4px 12px;
+            border-radius: 15px;
+            color: white;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .regiao-3rpmon {
+            background: #28a745;
+        }
+        
+        .regiao-38bpm {
+            background: #dc3545;
+        }
+        
         .no-data {
             text-align: center;
             padding: 40px;
@@ -188,13 +268,55 @@
             font-style: italic;
         }
         
+        .upload-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .upload-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .upload-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
         @media (max-width: 768px) {
             .search-section {
                 flex-direction: column;
+                gap: 10px;
+            }
+            
+            .search-input {
+                width: 100%;
+                min-width: unset;
+            }
+            
+            .file-input-wrapper {
+                min-width: unset;
+            }
+            
+            .clear-btn {
+                width: 100%;
+                min-width: unset;
             }
             
             .filter-buttons {
                 justify-content: center;
+                gap: 8px;
+            }
+            
+            .filter-btn {
+                flex: 1;
+                min-width: 100px;
+                font-size: 0.9em;
+                padding: 8px 12px;
             }
             
             .header h1 {
@@ -204,27 +326,42 @@
             .stat-number {
                 font-size: 2em;
             }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚔 Dashboard Operacional</h1>
-            <p>Controle de Efetivo e Viaturas por Município</p>
+            <h1>🚔 Dashboard CRPOP</h1>
+            <p>Controle de Efetivo e Viaturas - 3º RPMon e 38º BPM</p>
         </div>
         
         <div class="controls">
             <div class="search-section">
                 <input type="text" class="search-input" id="searchInput" placeholder="Buscar município...">
-                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
-                <button class="filter-btn" onclick="document.getElementById('fileInput').click()">
-                    📂 Carregar Planilha
+                
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv">
+                    <label for="fileInput" class="file-label">
+                        📊 Carregar Planilha
+                    </label>
+                </div>
+                
+                <button class="clear-btn" onclick="limparDados()">
+                    🗑️ Limpar Dados
                 </button>
             </div>
             
+            <div id="uploadStatus" class="upload-status"></div>
+            
             <div class="filter-buttons">
-                <button class="filter-btn active" onclick="filterData('all')">Todos</button>
+                <button class="filter-btn active" onclick="filterData('all')">Todos (0)</button>
+                <button class="filter-btn" onclick="filterData('3rpmon')">3º RPMon (0)</button>
+                <button class="filter-btn" onclick="filterData('38bpm')">38º BPM (0)</button>
                 <button class="filter-btn" onclick="filterData('with-efetivo')">Com Efetivo</button>
                 <button class="filter-btn" onclick="filterData('with-viaturas')">Com Viaturas</button>
                 <button class="filter-btn" onclick="filterData('sem-cobertura')">Sem Cobertura</button>
@@ -233,29 +370,38 @@
         
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-number" id="totalMunicipios">49</div>
-                <div class="stat-label">Municípios</div>
+                <div class="stat-number" id="totalMunicipios">0</div>
+                <div class="stat-label">Municípios Total</div>
+            </div>
+            <div class="stat-card rpmon">
+                <div class="stat-number" id="totalEfetivo3rpmon">0</div>
+                <div class="stat-label">Efetivo 3º RPMon</div>
+            </div>
+            <div class="stat-card bpm">
+                <div class="stat-number" id="totalEfetivo38bpm">0</div>
+                <div class="stat-label">Efetivo 38º BPM</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="totalEfetivo">208</div>
+                <div class="stat-number" id="totalEfetivo">0</div>
                 <div class="stat-label">Efetivo Total</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="totalViaturas">61</div>
+                <div class="stat-number" id="totalViaturas">0</div>
                 <div class="stat-label">Viaturas Total</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="coberturaPercentual">73%</div>
+                <div class="stat-number" id="coberturaPercentual">0%</div>
                 <div class="stat-label">Cobertura</div>
             </div>
         </div>
         
         <div class="data-grid">
-            <h3>Distribuição por Município</h3>
+            <h3>📋 Distribuição por Município - Total: <span id="totalMunicipiosTabela">0</span> municípios</h3>
             <table class="data-table">
                 <thead>
                     <tr>
                         <th>Município</th>
+                        <th>Região</th>
                         <th>Efetivo (24h)</th>
                         <th>Viaturas (24h)</th>
                         <th>Razão E/V</th>
@@ -268,79 +414,204 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
-        // Dados iniciais baseados na sua informação
-        const dadosOriginais = [
-            { municipio: "ÁGUA SANTA", efetivo: 0, viaturas: 0 },
-            { municipio: "ALTO ALEGRE", efetivo: 2, viaturas: 1 },
-            { municipio: "ANTA GORDA", efetivo: 2, viaturas: 1 },
-            { municipio: "ARVOREZINHA", efetivo: 6, viaturas: 3 },
-            { municipio: "CAMARGO", efetivo: 0, viaturas: 0 },
-            { municipio: "CARAZINHO", efetivo: 21, viaturas: 4 },
-            { municipio: "CASCA", efetivo: 2, viaturas: 1 },
-            { municipio: "CHAPADA", efetivo: 5, viaturas: 0 },
-            { municipio: "CHARRUA", efetivo: 0, viaturas: 0 },
-            { municipio: "COLORADO", efetivo: 2, viaturas: 1 },
-            { municipio: "CONSTANTINA", efetivo: 4, viaturas: 1 },
-            { municipio: "COXILHA", efetivo: 2, viaturas: 1 },
-            { municipio: "DAVID CANABARRO", efetivo: 3, viaturas: 1 },
-            { municipio: "DOIS LAJEADOS", efetivo: 0, viaturas: 0 },
-            { municipio: "ENGENHO VELHO", efetivo: 0, viaturas: 0 },
-            { municipio: "ESPUMOSO", efetivo: 0, viaturas: 0 },
-            { municipio: "FONTOURA XAVIER", efetivo: 1, viaturas: 0 },
-            { municipio: "GENTIL", efetivo: 2, viaturas: 1 },
-            { municipio: "GUAPORÉ", efetivo: 7, viaturas: 1 },
-            { municipio: "IBIRAPUITÃ", efetivo: 2, viaturas: 1 },
-            { municipio: "ILÓPOLIS", efetivo: 0, viaturas: 0 },
-            { municipio: "ITAPUCA", efetivo: 2, viaturas: 1 },
-            { municipio: "LAGOA DOS TRÊS CANTOS", efetivo: 0, viaturas: 0 },
-            { municipio: "LIBERATO SALZANO", efetivo: 3, viaturas: 1 },
-            { municipio: "MARAU", efetivo: 0, viaturas: 0 },
-            { municipio: "MATO CASTELHANO", efetivo: 3, viaturas: 1 },
-            { municipio: "MONTAURI", efetivo: 2, viaturas: 1 },
-            { municipio: "MORMAÇO", efetivo: 2, viaturas: 1 },
-            { municipio: "MULITERNO", efetivo: 3, viaturas: 0 },
-            { municipio: "NÃO-ME-TOQUE", efetivo: 0, viaturas: 0 },
-            { municipio: "NICOLAU VERGUEIRO", efetivo: 2, viaturas: 1 },
-            { municipio: "NOVA ALVORADA", efetivo: 2, viaturas: 1 },
-            { municipio: "NOVO XINGU", efetivo: 0, viaturas: 0 },
-            { municipio: "PASSO FUNDO", efetivo: 73, viaturas: 19 },
-            { municipio: "PONTÃO", efetivo: 2, viaturas: 1 },
-            { municipio: "PUTINGA", efetivo: 2, viaturas: 1 },
-            { municipio: "RONDA ALTA", efetivo: 3, viaturas: 1 },
-            { municipio: "RONDINHA", efetivo: 2, viaturas: 1 },
-            { municipio: "SANTO ANTÔNIO DO PALMA", efetivo: 3, viaturas: 1 },
-            { municipio: "SÃO DOMINGOS DO SUL", efetivo: 0, viaturas: 0 },
-            { municipio: "SÃO JOSÉ DO HERVAL", efetivo: 3, viaturas: 2 },
-            { municipio: "SÃO VALENTIM DO SUL", efetivo: 0, viaturas: 0 },
-            { municipio: "SARANDI", efetivo: 9, viaturas: 3 },
-            { municipio: "SERAFINA CORRÊA", efetivo: 6, viaturas: 1 },
-            { municipio: "SERTÃO", efetivo: 4, viaturas: 1 },
-            { municipio: "SOLEDADE", efetivo: 9, viaturas: 1 },
-            { municipio: "TAPEJARA", efetivo: 5, viaturas: 2 },
-            { municipio: "TAPERA", efetivo: 0, viaturas: 0 },
-            { municipio: "TIO HUGO", efetivo: 0, viaturas: 0 },
-            { municipio: "TRÊS PALMEIRAS", efetivo: 2, viaturas: 1 },
-            { municipio: "VANINI", efetivo: 3, viaturas: 1 },
-            { municipio: "VICTOR GRAEFF", efetivo: 0, viaturas: 0 },
-            { municipio: "VILA LÂNGARO", efetivo: 0, viaturas: 0 },
-            { municipio: "VILA MARIA", efetivo: 2, viaturas: 1 }
-        ];
-
-        let dadosAtuais = [...dadosOriginais];
+        console.log('Dashboard iniciado - Versão 2.0');
+        
+        // Sistema dinâmico - não depende de lista fixa de municípios
+        let municipiosBase = []; // Será preenchido dinamicamente
+        let dadosAtuais = [];
         let filtroAtual = 'all';
 
+        function inicializarMunicipiosVazios() {
+            // Criar lista vazia inicial para exibição
+            municipiosBase = [
+                { municipio: "AGUARDANDO PLANILHA...", regiao: "N/A", efetivo: 0, viaturas: 0 }
+            ];
+            dadosAtuais = [...municipiosBase];
+            console.log('Sistema inicializado - aguardando planilha');
+        }
+
+        function determinarRegiao(nomeMunicipio) {
+            // Lista dos municípios do 3º RPMon (os outros serão 38º BPM)
+            const municipios3rpmon = [
+                'ÁGUA SANTA', 'CAMARGO', 'CASCA', 'CHARRUA', 'CIRÍACO', 'COXILHA',
+                'DAVID CANABARRO', 'DOIS LAJEADOS', 'ERNESTINA', 'GENTIL', 'GUAPORÉ',
+                'MARAU', 'MATO CASTELHANO', 'MONTAURI', 'MULITERNO', 'NICOLAU VERGUEIRO',
+                'NOVA ALVORADA', 'PASSO FUNDO', 'PONTÃO', 'SANTA CECÍLIA DO SUL',
+                'SANTO ANTÔNIO DO PALMA', 'SÃO DOMINGOS DO SUL', 'SÃO VALENTIM DO SUL',
+                'SERAFINA CORRÊA', 'SERTÃO', 'TAPEJARA', 'UNIÃO DA SERRA', 'VANINI',
+                'VILA LÂNGARO', 'VILA MARIA'
+            ];
+
+            const nomeNormalizado = nomeMunicipio.toUpperCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            
+            const eh3rpmon = municipios3rpmon.some(m => {
+                const mNormalizado = m.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                return nomeNormalizado === mNormalizado || 
+                       nomeNormalizado.includes(mNormalizado) || 
+                       mNormalizado.includes(nomeNormalizado);
+            });
+
+            return eh3rpmon ? "3º RPMon" : "38º BPM";
+        }
+
+        function processarPlanilhaEspecifica(jsonData) {
+            let municipiosProcessados = 0;
+
+            try {
+                console.log('=== INÍCIO PROCESSAMENTO DV ===');
+                console.log('Total de linhas na planilha:', jsonData.length);
+                
+                // Verificar se temos pelo menos 4 linhas
+                if (jsonData.length < 4) {
+                    throw new Error('Planilha DV deve ter pelo menos 4 linhas');
+                }
+                
+                // Extrair dados da estrutura específica da planilha DV
+                const municipiosLinha = jsonData[0] || [];  // Linha 1: nomes dos municípios
+                const efetivosLinha = jsonData[2] || [];    // Linha 3: efetivos
+                const viaturasLinha = jsonData[3] || [];    // Linha 4: viaturas
+
+                console.log('Municípios linha length:', municipiosLinha.length);
+                console.log('Efetivos linha length:', efetivosLinha.length);
+                console.log('Viaturas linha length:', viaturasLinha.length);
+                
+                console.log('Municípios linha (primeiros 10):', municipiosLinha.slice(0, 10));
+                console.log('Efetivos linha (primeiros 10):', efetivosLinha.slice(0, 10));
+                console.log('Viaturas linha (primeiros 10):', viaturasLinha.slice(0, 10));
+
+                // Resetar lista de municípios
+                municipiosBase = [];
+                console.log('Lista de municípios resetada');
+
+                // Determinar quantas colunas processar (menor entre as três linhas)
+                const maxColunas = Math.min(
+                    municipiosLinha.length,
+                    efetivosLinha.length,
+                    viaturasLinha.length
+                );
+                
+                console.log('Máximo de colunas a processar:', maxColunas);
+
+                // Processar dados a partir da coluna B (índice 1)
+                for (let i = 1; i < maxColunas; i++) {
+                    const nomeMunicipio = municipiosLinha[i];
+                    
+                    // Pular células vazias ou "TOTAL"
+                    if (!nomeMunicipio || 
+                        nomeMunicipio.toString().toUpperCase().trim() === 'TOTAL' ||
+                        nomeMunicipio.toString().toUpperCase().trim() === '') {
+                        console.log(`Pulando índice ${i}: "${nomeMunicipio}"`);
+                        continue;
+                    }
+
+                    // Verificar se temos dados de efetivo e viaturas para este índice
+                    const efetivo = (efetivosLinha[i] !== undefined && efetivosLinha[i] !== null) 
+                        ? parseInt(efetivosLinha[i]) || 0 
+                        : 0;
+                    
+                    const viaturas = (viaturasLinha[i] !== undefined && viaturasLinha[i] !== null) 
+                        ? parseInt(viaturasLinha[i]) || 0 
+                        : 0;
+                        
+                    const regiao = determinarRegiao(nomeMunicipio.toString());
+
+                    console.log(`[${i}] Processando ${nomeMunicipio}: Efetivo ${efetivo}, Viaturas ${viaturas}, Região ${regiao}`);
+
+                    // Adicionar município à base dinâmica
+                    municipiosBase.push({
+                        municipio: nomeMunicipio.toString().toUpperCase().trim(),
+                        regiao: regiao,
+                        efetivo: efetivo,
+                        viaturas: viaturas
+                    });
+
+                    municipiosProcessados++;
+                }
+
+                console.log(`Total processados: ${municipiosProcessados}`);
+                console.log('MunicípiosBase final:', municipiosBase.length);
+
+                // Verificar se processamos algum município
+                if (municipiosProcessados === 0) {
+                    throw new Error('Nenhum município foi processado. Verifique o formato da planilha.');
+                }
+
+                // Calcular totais
+                const totalEfetivo = municipiosBase.reduce((sum, m) => sum + m.efetivo, 0);
+                const totalViaturas = municipiosBase.reduce((sum, m) => sum + m.viaturas, 0);
+                const total3rpmon = municipiosBase.filter(m => m.regiao === "3º RPMon").length;
+                const total38bpm = municipiosBase.filter(m => m.regiao === "38º BPM").length;
+
+                console.log(`Totais: Efetivo ${totalEfetivo}, Viaturas ${totalViaturas}`);
+                console.log(`Regiões: 3º RPMon ${total3rpmon}, 38º BPM ${total38bpm}`);
+
+                // Atualizar contadores dos filtros
+                atualizarContadoresFiltros();
+                console.log('Contadores atualizados');
+
+                // Mostrar resultado detalhado
+                let mensagem = `✅ ${municipiosProcessados} municípios processados\n`;
+                mensagem += `🏛️ 3º RPMon: ${total3rpmon} | 38º BPM: ${total38bpm}\n`;
+                mensagem += `📊 Efetivo: ${totalEfetivo} | Viaturas: ${totalViaturas}`;
+
+                mostrarStatus(mensagem, 'success');
+                console.log('Status mostrado, chamando aplicarFiltros...');
+                
+                aplicarFiltros();
+                console.log('Filtros aplicados com sucesso');
+                
+                console.log('=== PROCESSAMENTO CONCLUÍDO ===');
+
+            } catch (error) {
+                console.error('=== ERRO NO PROCESSAMENTO ===', error);
+                mostrarStatus('❌ Erro ao processar planilha: ' + error.message, 'error');
+                
+                // Em caso de erro, manter estado inicial
+                inicializarMunicipiosVazios();
+                aplicarFiltros();
+            }
+        }
+
+        function atualizarContadoresFiltros() {
+            const total = municipiosBase.length;
+            const total3rpmon = municipiosBase.filter(m => m.regiao === "3º RPMon").length;
+            const total38bpm = municipiosBase.filter(m => m.regiao === "38º BPM").length;
+            
+            // Atualizar textos dos botões
+            const botoes = document.querySelectorAll('.filter-btn');
+            if (botoes.length >= 3) {
+                botoes[0].textContent = `Todos (${total})`;
+                botoes[1].textContent = `3º RPMon (${total3rpmon})`;
+                botoes[2].textContent = `38º BPM (${total38bpm})`;
+            }
+        }
+
         function calcularEstatisticas() {
-            const totalMunicipios = dadosAtuais.length;
-            const totalEfetivo = dadosAtuais.reduce((sum, item) => sum + item.efetivo, 0);
-            const totalViaturas = dadosAtuais.reduce((sum, item) => sum + item.viaturas, 0);
-            const municipiosComCobertura = dadosAtuais.filter(item => item.efetivo > 0 || item.viaturas > 0).length;
-            const coberturaPercentual = Math.round((municipiosComCobertura / totalMunicipios) * 100);
+            const totalMunicipios = municipiosBase.length;
+            const totalEfetivo = municipiosBase.reduce((sum, item) => sum + item.efetivo, 0);
+            const totalViaturas = municipiosBase.reduce((sum, item) => sum + item.viaturas, 0);
+            
+            const efetivo3rpmon = municipiosBase
+                .filter(item => item.regiao === "3º RPMon")
+                .reduce((sum, item) => sum + item.efetivo, 0);
+            
+            const efetivo38bpm = municipiosBase
+                .filter(item => item.regiao === "38º BPM")
+                .reduce((sum, item) => sum + item.efetivo, 0);
+            
+            const municipiosComCobertura = municipiosBase.filter(item => item.efetivo > 0 || item.viaturas > 0).length;
+            const coberturaPercentual = totalMunicipios > 0 ? Math.round((municipiosComCobertura / totalMunicipios) * 100) : 0;
 
             document.getElementById('totalMunicipios').textContent = totalMunicipios;
+            document.getElementById('totalEfetivo3rpmon').textContent = efetivo3rpmon;
+            document.getElementById('totalEfetivo38bpm').textContent = efetivo38bpm;
             document.getElementById('totalEfetivo').textContent = totalEfetivo;
             document.getElementById('totalViaturas').textContent = totalViaturas;
             document.getElementById('coberturaPercentual').textContent = coberturaPercentual + '%';
+            document.getElementById('totalMunicipiosTabela').textContent = totalMunicipios;
         }
 
         function getStatus(efetivo, viaturas) {
@@ -361,7 +632,7 @@
             tbody.innerHTML = '';
 
             if (dados.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="no-data">Nenhum município encontrado</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="no-data">Nenhum município encontrado</td></tr>';
                 return;
             }
 
@@ -375,6 +646,7 @@
 
                 row.innerHTML = `
                     <td><strong>${item.municipio}</strong></td>
+                    <td><span class="regiao-tag regiao-${item.regiao.replace('º', '').replace(' ', '').toLowerCase()}">${item.regiao}</span></td>
                     <td class="efetivo-cell">${item.efetivo}</td>
                     <td class="viaturas-cell">${item.viaturas}</td>
                     <td class="ratio-cell">${getRazao(item.efetivo, item.viaturas)}</td>
@@ -385,7 +657,6 @@
         }
 
         function filterData(tipo) {
-            // Atualizar botões
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
 
@@ -394,9 +665,8 @@
         }
 
         function aplicarFiltros() {
-            let dadosFiltrados = [...dadosOriginais];
+            let dadosFiltrados = [...municipiosBase];
 
-            // Aplicar filtro de busca
             const termoBusca = document.getElementById('searchInput').value.toLowerCase();
             if (termoBusca) {
                 dadosFiltrados = dadosFiltrados.filter(item => 
@@ -404,8 +674,13 @@
                 );
             }
 
-            // Aplicar filtro por tipo
             switch (filtroAtual) {
+                case '3rpmon':
+                    dadosFiltrados = dadosFiltrados.filter(item => item.regiao === "3º RPMon");
+                    break;
+                case '38bpm':
+                    dadosFiltrados = dadosFiltrados.filter(item => item.regiao === "38º BPM");
+                    break;
                 case 'with-efetivo':
                     dadosFiltrados = dadosFiltrados.filter(item => item.efetivo > 0);
                     break;
@@ -422,25 +697,232 @@
             calcularEstatisticas();
         }
 
-        // Configurar busca
-        document.getElementById('searchInput').addEventListener('input', aplicarFiltros);
+        function processarPlanilha(dados) {
+            // Função genérica para outros formatos (mantida para compatibilidade)
+            let municipiosAtualizados = 0;
+
+            try {
+                municipiosBase.forEach(municipio => {
+                    municipio.efetivo = 0;
+                    municipio.viaturas = 0;
+                });
+
+                dados.forEach((linha, index) => {
+                    const nomeMunicipio = (
+                        linha.municipio || linha.Município || linha.MUNICIPIO || linha.município ||
+                        linha.nome || linha.Nome || linha.NOME ||
+                        linha.cidade || linha.Cidade || linha.CIDADE ||
+                        linha['Nome do Município'] || linha['NOME DO MUNICIPIO'] ||
+                        linha.campo || linha.Campo || linha.CAMPO || ''
+                    ).toString().trim().toUpperCase();
+
+                    if (!nomeMunicipio) return;
+
+                    const efetivo = parseInt(
+                        linha.efetivo || linha.Efetivo || linha.EFETIVO ||
+                        linha['Total Efetivo Empregado nas 24 horas'] ||
+                        linha['efetivo_24h'] || linha['Efetivo 24h'] ||
+                        linha.policiais || linha.Policiais || linha.POLICIAIS || 0
+                    ) || 0;
+
+                    const viaturas = parseInt(
+                        linha.viaturas || linha.Viaturas || linha.VIATURAS ||
+                        linha['Total Viaturas Empregadas nas 24 horas'] ||
+                        linha['viaturas_24h'] || linha['Viaturas 24h'] ||
+                        linha.carros || linha.Carros || linha.CARROS || 0
+                    ) || 0;
+
+                    const municipioEncontrado = municipiosBase.find(m => {
+                        const nomeBase = m.municipio.toUpperCase();
+                        return (
+                            nomeBase === nomeMunicipio ||
+                            nomeBase.includes(nomeMunicipio) ||
+                            nomeMunicipio.includes(nomeBase) ||
+                            nomeBase.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 
+                            nomeMunicipio.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                        );
+                    });
+
+                    if (municipioEncontrado) {
+                        municipioEncontrado.efetivo = efetivo;
+                        municipioEncontrado.viaturas = viaturas;
+                        municipiosAtualizados++;
+                    }
+                });
+
+                let mensagem = `✅ ${municipiosAtualizados} municípios atualizados`;
+
+                mostrarStatus(mensagem, municipiosAtualizados > 0 ? 'success' : 'error');
+                aplicarFiltros();
+
+            } catch (error) {
+                mostrarStatus('❌ Erro ao processar planilha: ' + error.message, 'error');
+                console.error('Erro completo:', error);
+            }
+        }
+
+        function mostrarStatus(mensagem, tipo) {
+            const status = document.getElementById('uploadStatus');
+            status.className = `upload-status upload-${tipo}`;
+            status.textContent = mensagem;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 8000);
+        }
+
+        function limparDados() {
+            if (municipiosBase.length === 0 || municipiosBase[0].municipio === "AGUARDANDO PLANILHA...") {
+                mostrarStatus('ℹ️ Nenhum dado para limpar. Carregue uma planilha primeiro.', 'success');
+                return;
+            }
+
+            municipiosBase.forEach(municipio => {
+                municipio.efetivo = 0;
+                municipio.viaturas = 0;
+            });
+            
+            aplicarFiltros();
+            mostrarStatus('🗑️ Dados limpos! Todos os valores foram zerados.', 'success');
+        }
 
         // Configurar upload de arquivo
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Aqui você pode processar o arquivo Excel
-                    alert('Funcionalidade de importação será implementada. Por enquanto, os dados estão sendo carregados manualmente.');
-                };
-                reader.readAsBinaryString(file);
+            if (!file) return;
+
+            console.log('=== INÍCIO DO UPLOAD ===');
+            console.log('Arquivo selecionado:', file.name, file.type, file.size);
+
+            mostrarStatus('📂 Processando arquivo...', 'success');
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                console.log('=== ARQUIVO LIDO ===');
+                try {
+                    if (file.name.toLowerCase().includes('.csv')) {
+                        console.log('Processando como CSV...');
+                        // Processar CSV
+                        const text = e.target.result;
+                        const lines = text.split('\n');
+                        const headers = lines[0].split(',').map(h => h.trim());
+                        
+                        const dadosCSV = lines.slice(1)
+                            .filter(line => line.trim())
+                            .map(line => {
+                                const values = line.split(',').map(v => v.trim());
+                                const obj = {};
+                                headers.forEach((header, index) => {
+                                    obj[header.toLowerCase().replace(/[^a-z0-9]/g, '')] = values[index] || '';
+                                });
+                                return obj;
+                            });
+                        
+                        processarPlanilha(dadosCSV);
+                    } else {
+                        console.log('Processando como Excel...');
+                        
+                        // Verificar se XLSX está disponível
+                        if (typeof XLSX === 'undefined') {
+                            throw new Error('Biblioteca XLSX não carregada');
+                        }
+                        
+                        // Processar Excel
+                        const data = new Uint8Array(e.target.result);
+                        console.log('Dados convertidos para Uint8Array, tamanho:', data.length);
+                        
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        console.log('Workbook criado:', workbook.SheetNames);
+                        
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        console.log('Primeira planilha selecionada:', workbook.SheetNames[0]);
+                        
+                        // Verificar se é uma planilha DV (formato específico)
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { 
+                            header: 1, 
+                            raw: false 
+                        });
+                        
+                        console.log('=== DEBUG: DADOS DA PLANILHA ===');
+                        console.log('Total de linhas:', jsonData.length);
+                        console.log('Primeira linha:', jsonData[0]);
+                        console.log('Segunda linha:', jsonData[1]); 
+                        console.log('Terceira linha:', jsonData[2]);
+                        console.log('Quarta linha:', jsonData[3]);
+                        
+                        // Detectar formato da planilha DV
+                        const primeiraLinha = jsonData[0] || [];
+                        const segundaLinha = jsonData[1] || [];
+                        const terceiraLinha = jsonData[2] || [];
+                        
+                        console.log('=== DEBUG: DETECÇÃO DE FORMATO ===');
+                        console.log('Primeira célula:', primeiraLinha[0]);
+                        console.log('Segunda linha primeira célula:', segundaLinha[0]);
+                        console.log('Terceira linha primeira célula:', terceiraLinha[0]);
+                        
+                        // Detecção mais flexível do formato DV
+                        const isDvFormat = (
+                            primeiraLinha[0] === 'CAMPO' ||
+                            (segundaLinha[0] && segundaLinha[0].toString().includes('RESUMO')) ||
+                            (terceiraLinha[0] && terceiraLinha[0].toString().includes('Total Efetivo'))
+                        );
+                        
+                        // Verificação adicional: se a primeira linha tem muitos municípios
+                        const temMunicipios = primeiraLinha && primeiraLinha.length > 10;
+                        
+                        // Formato DV se atende pelo menos uma condição E tem muitos municípios
+                        const formatoDV = isDvFormat && temMunicipios;
+                        
+                        console.log('=== DEBUG: RESULTADO DETECÇÃO ===');
+                        console.log('É formato DV (básico)?', isDvFormat);
+                        console.log('Tem muitos municípios?', temMunicipios);
+                        console.log('Formato DV final?', formatoDV);
+                        console.log('Condição 1 (CAMPO):', primeiraLinha[0] === 'CAMPO');
+                        console.log('Condição 2 (RESUMO):', segundaLinha[0] && segundaLinha[0].toString().includes('RESUMO'));
+                        console.log('Condição 3 (Efetivo):', terceiraLinha[0] && terceiraLinha[0].toString().includes('Total Efetivo'));
+                        
+                        if (formatoDV) {
+                            console.log('📋 Detectado formato DV - processando...');
+                            processarPlanilhaEspecifica(jsonData);
+                        } else {
+                            console.log('📋 Formato genérico detectado - processando...');
+                            // Formato genérico
+                            const jsonGenerico = XLSX.utils.sheet_to_json(firstSheet);
+                            console.log('Dados genéricos (primeiras 3 linhas):', jsonGenerico.slice(0, 3));
+                            processarPlanilha(jsonGenerico);
+                        }
+                    }
+                } catch (error) {
+                    console.error('=== ERRO NO PROCESSAMENTO ===', error);
+                    mostrarStatus('❌ Erro ao ler arquivo: ' + error.message, 'error');
+                }
+            };
+
+            reader.onerror = function(error) {
+                console.error('=== ERRO NA LEITURA DO ARQUIVO ===', error);
+                mostrarStatus('❌ Erro ao ler arquivo', 'error');
+            };
+
+            if (file.name.toLowerCase().includes('.csv')) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
             }
+
+            // Limpar o input para permitir recarregar o mesmo arquivo
+            this.value = '';
         });
 
-        // Inicializar
-        renderizarTabela(dadosAtuais);
-        calcularEstatisticas();
+        // Configurar busca
+        document.getElementById('searchInput').addEventListener('input', aplicarFiltros);
+
+        // Inicializar sistema dinâmico
+        console.log('Inicializando dashboard...');
+        inicializarMunicipiosVazios();
+        aplicarFiltros();
+        console.log('Dashboard inicializado com sucesso!');
     </script>
 </body>
 </html>
